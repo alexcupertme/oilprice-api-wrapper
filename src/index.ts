@@ -22,8 +22,6 @@ type OilType = "WTI_USD" | "BRENT_CRUDE_USD";
 type Options = {
 	priceType?: PriceType;
 	oilType?: OilType;
-	periodFrom?: number;
-	periodTo?: number;
 };
 
 type OilResponse = {
@@ -34,19 +32,19 @@ type OilResponse = {
 };
 
 interface IOilPrice {
-	latest(token: string, options: Options): Promise<OilResponse>;
-	pastDay(token: string): Promise<OilResponse>;
-	pastWeek(token: string): Promise<OilResponse>;
-	pastMonth(token: string): Promise<OilResponse>;
-	pastYear(token: string): Promise<OilResponse>;
+	latest(options?: Options): Promise<OilResponse>;
+	pastDay(options?: Options): Promise<OilResponse>;
+	pastWeek(options?: Options): Promise<OilResponse>;
+	pastMonth(options?: Options): Promise<OilResponse>;
+	pastYear(options?: Options): Promise<OilResponse>;
 }
 
-async function getOilPrice(method: string, token: string, options?: Options) {
+async function getOilPrice(method: string, token: string, options?: Options, periodFrom?: number, periodTo?: number) {
 	// prettier-ignore
-	console.log(`${DEFAULT_GATE}${method === null || undefined || "" ? "" : method}${options != undefined?`?${options.oilType != undefined ? `${PARAMETERS.byCode}=${options.oilType}&` : ""}${options.priceType != undefined ? `${PARAMETERS.byType}=${options.priceType}&` : ""}${options.periodFrom != undefined && options.periodTo != undefined ? `${PARAMETERS.byPeriod}[from]=${options.periodFrom}&${PARAMETERS.byPeriod}[to]=${options.periodTo}` : ""}`: ""}`);
+	console.log(`${DEFAULT_GATE}${method === null || undefined || "" ? "" : method}${options != undefined?`?${options.oilType != undefined ? `${PARAMETERS.byCode}=${options.oilType}&` : ""}${options.priceType != undefined ? `${PARAMETERS.byType}=${options.priceType}&` : ""}${periodFrom != undefined && periodTo != undefined ? `${PARAMETERS.byPeriod}[from]=${periodFrom}&${PARAMETERS.byPeriod}[to]=${periodTo}` : ""}`: ""}`);
 	// prettier-ignore
 	return await axios({
-		url: `${DEFAULT_GATE}${method === null || undefined || "" ? "" : method}${options != undefined?`?${options.oilType != undefined ? `${PARAMETERS.byCode}=${options.oilType}&` : ""}${options.priceType != undefined ? `${PARAMETERS.byType}=${options.priceType}&` : ""}${options.periodFrom != undefined && options.periodTo != undefined ? `${PARAMETERS.byPeriod}[from]=${options.periodFrom}&${PARAMETERS.byPeriod}[to]=${options.periodTo}` : ""}`: ""}`,
+		url: `${DEFAULT_GATE}${method === null || undefined || "" ? "" : method}${options != undefined?`?${options.oilType != undefined ? `${PARAMETERS.byCode}=${options.oilType}&` : ""}${options.priceType != undefined ? `${PARAMETERS.byType}=${options.priceType}&` : ""}${periodFrom != undefined && periodTo != undefined ? `${PARAMETERS.byPeriod}[from]=${periodFrom}&${PARAMETERS.byPeriod}[to]=${periodTo}` : ""}`: ""}`,
 		headers: {
 			Authorization: `Token ${token}`,
 			"Content-type": "application/json",
@@ -59,28 +57,36 @@ async function getOilPrice(method: string, token: string, options?: Options) {
 }
 
 class OilPrice implements IOilPrice {
-	constructor() {}
-	async latest(token: string, options?: Options): Promise<OilResponse> {
-		return await getOilPrice(METHODS.latestGate, token, options);
+	token: string;
+	/**
+	 *
+	 * @param token Your token from https://www.oilpriceapi.com/dashboard
+	 */
+	constructor(token: string) {
+		this.token = token;
 	}
-	async pastDay(token: string, options?: Options): Promise<OilResponse> {
-		return await getOilPrice(METHODS.pastDayGate, token, options);
+	async latest(options?: Options): Promise<OilResponse> {
+		return await getOilPrice(METHODS.latestGate, this.token, options);
 	}
-	async pastWeek(token: string, options?: Options): Promise<OilResponse> {
-		return await getOilPrice(METHODS.pastWeekGate, token, options);
+
+	async pastDay(options?: Options): Promise<OilResponse> {
+		return await getOilPrice(METHODS.pastDayGate, this.token, options);
 	}
-	async pastMonth(token: string, options?: Options): Promise<OilResponse> {
-		return await getOilPrice(METHODS.pastMonthGate, token, options);
+	async pastWeek(options?: Options): Promise<OilResponse> {
+		return await getOilPrice(METHODS.pastWeekGate, this.token, options);
 	}
-	async pastYear(token: string, options?: Options): Promise<OilResponse> {
-		return await getOilPrice(METHODS.pastYearGate, token, options);
+	async pastMonth(options?: Options): Promise<OilResponse> {
+		return await getOilPrice(METHODS.pastMonthGate, this.token, options);
+	}
+	async pastYear(options?: Options): Promise<OilResponse> {
+		return await getOilPrice(METHODS.pastYearGate, this.token, options);
 	}
 }
 
-const oilPrice = new OilPrice();
+const oilPrice = new OilPrice("6d433595fc72d0d1715ee75edb1f2f49");
 
 oilPrice
-	.pastMonth("6d433595fc72d0d1715ee75edb1f2f49", {
+	.pastMonth({
 		priceType: "daily_average_price",
 		oilType: "WTI_USD",
 	})
